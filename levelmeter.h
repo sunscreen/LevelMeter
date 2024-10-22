@@ -95,11 +95,16 @@ private:
     QPainterPath rms_path;
     QPainterPath decay_path;
     QPainterPath clear_segs_path;
+
     QPen solidpen;
     QPen segment_pen;
 
     QBrush clearbrush;
     QBrush peakhold_brush;
+    QBrush rms_brush;
+    QBrush peakdecay_brush;
+
+
 
 
 
