@@ -62,9 +62,12 @@ void LevelMeter::reset()
 {
     m_rmsLevel = 0.0;
     m_peakLevel = 0.0;
+//    m_decayedPeakLevel=0.0;
+//    m_resetstate=true;
+//    update();
 }
 
-void LevelMeter::levelChanged(qreal rmsLevel, float peakLevel, int numSamples)
+void LevelMeter::levelChanged(float rmsLevel, float peakLevel, int numSamples)
 {
     // Smooth the RMS signal
     //const qreal smooth = pow(qreal(0.9), static_cast<qreal>(numSamples) / 256); // TODO: remove this magic number
@@ -78,17 +81,17 @@ void LevelMeter::levelChanged(qreal rmsLevel, float peakLevel, int numSamples)
     if (peakLevel > m_decayedPeakLevel) {
         m_peakLevel = peakLevel;
         m_decayedPeakLevel = peakLevel;
-        qreal decay_segments = floor((bar_dist / 6) * m_decayedPeakLevel);
+        decay_segments = floor((bar_dist / 6) * m_decayedPeakLevel);
         m_decayedPeak_seg=decay_segments;
 
         m_peakLevelChanged.start();
     }
 
     if (peakLevel > m_peakHoldLevel) {
-        qreal decay_segments = floor((bar_dist / 6) * m_decayedPeakLevel);
-
-        m_peakHold_seg = decay_segments+6;
+        decay_segments = floor((bar_dist / 6) * m_decayedPeakLevel);
         m_peakHoldLevel = peakLevel;
+        m_peakHold_seg = decay_segments+3;
+
         m_peakHoldLevelChanged.start();
     }
 
@@ -120,7 +123,9 @@ void LevelMeter::redrawTimerExpired()
 
 void LevelMeter::draw_decaypeak(QPainter &painter,QRect &bar) {
 
-    qreal decay_segments = floor((bar_dist / 6) * m_decayedPeakLevel);
+    //qreal decay_segments = floor((bar_dist / 6) * m_decayedPeakLevel);
+//    if (decay_segments <= 0) return;
+
     qreal startp = rect().bottom();
 
     int glum=85;
@@ -136,7 +141,7 @@ void LevelMeter::draw_decaypeak(QPainter &painter,QRect &bar) {
     int rlum=125;
 
     for (int x=0;x<decay_segments;x++) {
-   
+    //if ((startp-10) < hold_pos) break;
     bar.setBottom(startp);
     bar.setTop(startp-5);
     green_hsl.setHsl(ghue,gsat,glum);
@@ -174,7 +179,7 @@ void LevelMeter::draw_decaypeak(QPainter &painter,QRect &bar) {
 
     if ((startp) < (rect().height()/5)) {
 
-        QColor red_hsl;
+        //QColor red_hsl;
         red_hsl.setHsl(rhue, rsat,rlum);
         //red_hsl=red_hsl.lighter();
         //rhue-=1;
@@ -236,13 +241,15 @@ void LevelMeter::draw_rmspower(QPainter &painter,QRect &bar) {
 }
 void LevelMeter::draw_peakhold(QPainter &painter,QRect &bar) {
 
+    //if (m_peakHold_seg <= decay_segments) m_peakHold_seg=decay_segments+1;
 
     //qreal hold_pos = floor(rect().top()*7 + (1.0 - m_peakHoldLevel) * rect().height())-6;
-    qreal hold_pos = rect().bottom() - (m_peakHold_seg * 5);
+    qreal hold_pos = rect().bottom() - (m_peakHold_seg * 6) + 1;
     //qDebug() << hold_pos;
 
     painter.setPen(Qt::NoPen);
     painter.setBrush(peakhold_brush);
+
 
     if (hold_pos < bar.height() / 6) {
     peakhold_brush.setColor(red);
@@ -251,17 +258,33 @@ void LevelMeter::draw_peakhold(QPainter &painter,QRect &bar) {
 
     bar.setTop(hold_pos);
     bar.setBottom(hold_pos + 5);
+    peak_hold_path.clear();
+    peak_hold_path.addRoundedRect(QRectF(bar), 2, 2);
+
+    peakhold_brush.setColor(white);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(peakhold_brush);
+
+    painter.setClipPath(peak_hold_path);
     painter.drawRect(bar);
+
+    peakhold_brush.setColor(green);
+    painter.setPen(solidpen);
+    painter.setBrush(peakhold_brush);
+    painter.drawRect(bar);
+
+//    painter.drawRect(bar);
 
 }
 
 void LevelMeter::clearMeter(QPainter &painter,QRect clearbar) {
-    painter.setBrush(clearbrush);
-    painter.setPen(Qt::NoPen);
-    painter.drawRect(rect());
 
     qreal startp=clearbar.bottom();
     int max_segments = floor(clearbar.height()/6);
+
+    painter.setBrush(clearbrush);
+    painter.setPen(Qt::NoPen);
+    painter.drawRect(rect());
 
     painter.setPen(segment_pen);
 
