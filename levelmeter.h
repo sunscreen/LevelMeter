@@ -28,7 +28,7 @@ public:
 
 public slots:
     void reset();
-    void levelChanged(qreal rmsLevel, float peakLevel, int numSamples);
+    void levelChanged(float rmsLevel, float peakLevel, int numSamples);
 
 private slots:
     void redrawTimerExpired();
@@ -95,6 +95,7 @@ private:
     QPainterPath rms_path;
     QPainterPath decay_path;
     QPainterPath clear_segs_path;
+    QPainterPath peak_hold_path;
 
     QPen solidpen;
     QPen segment_pen;
@@ -103,7 +104,7 @@ private:
     QBrush peakhold_brush;
     QBrush rms_brush;
     QBrush peakdecay_brush;
-
+    qreal decay_segments;
 
 
 
@@ -115,3 +116,4 @@ private:
 };
 
 #endif // LEVELMETER_H
+
